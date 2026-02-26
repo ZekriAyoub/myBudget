@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import './App.css'
-import api from './api';
+import supabase from './api';
 import toast, { Toaster } from 'react-hot-toast';
-import { ArrowDownCircle, ArrowUpCircle, Wallet } from 'lucide-react';
+import { Activity, ArrowDownCircle, ArrowUpCircle, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
 
 type Transaction = {
   id: string;
@@ -13,6 +13,46 @@ type Transaction = {
 
 
 function App() {
+
+  const [transactions, setTransactions] = useState<Transaction[]>([])
+
+  const getTransactions = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('Transaction')
+        .select('*')
+      console.log(data)
+      if (error) throw error
+
+      setTransactions(data)
+      toast.success("Transactions chargées avec succès")
+    } catch (error) {
+      toast.error("Erreur de chargement des transactions")
+      console.error(error)
+    }
+  }
+
+  useEffect(() => {
+    getTransactions()
+  }, [])
+
+  const amounts = transactions.map(t => Number(t.amount) || 0)
+  const balance = amounts.reduce((acc, item) => acc + item, 0) || 0
+
+  const income = amounts.filter(a => a > 0).reduce((acc, item) => acc + item, 0) || 0
+  const expense = amounts.filter(a => a < 0).reduce((acc, item) => acc + item, 0) || 0
+  const ratio = income > 0 ? Math.min((Math.abs(expense) / income) *100, 100) : 0
+
+  const formatDate = (dateString: string) => {
+    const d = new Date(dateString)
+    return d.toLocaleDateString('fr-FR', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour : '2-digit',
+      minute : '2-digit'
+    })
+  }
 
 
   return (
@@ -30,7 +70,7 @@ function App() {
                 Votre solde
               </div>
               <div className="stat-value">
-                 300 €
+                {balance.toFixed(2)} €
               </div>
             </div>
 
@@ -40,7 +80,7 @@ function App() {
                 Revenus
               </div>
               <div className="stat-value">
-                100 €
+                {income.toFixed(2)}€
               </div>
             </div>
 
@@ -50,18 +90,57 @@ function App() {
                 Dépenses
               </div>
               <div className="stat-value">
-                 200 €
+                 {expense.toFixed(2)} €
               </div>
             </div>
 
           </div>
 
-          <div className="flex justify-between rounded-2xl border-2 border-warning/5 border-dashed bg-warning/5 p-5">
+          <div className="rounded-2xl border-2 border-warning/5 border-dashed bg-warning/5 p-5">
             <div className="flex justify-between items-center mb-1">
-
+              <div className="badge badge-soft badge-warning gap-1">
+                <Activity className="w-4 h-4" />
+                Dépenses VS Revenus
+              </div>
+              <div> 
+                {ratio.toFixed(0)} %
+              </div>
             </div>
+            <progress className="progress progress-warning w-full" value={ratio} max={100}></progress>
           </div>
  
+          <button ></button>
+          <div className="rounded-2xl border-2 border-warning/5 border-dashed bg-warning/5">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Description</th>
+                  <th>Montant</th>
+                  <th>Date</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+
+                {transactions.map((transaction, index) => (
+                <tr
+                  key={transaction.id}>
+                  <th>{index + 1}</th>
+                  <td>{transaction.text}</td>
+                  <td className="font-semibold flex items-center gap-2">
+                    {transaction.amount > 0 ? 
+                    ( <TrendingUp className="test-sucess w-6 h-6"/> ) : ( <TrendingDown className="test-error w-6 h-6"/> )}
+                    {transaction.amount > 0 ? 
+                    `+${transaction.amount}` : `-${transaction.amount}`}
+                  </td>
+                  <td>{formatDate(transaction.created_at)}</td>
+                </tr>
+                ))}
+
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </>
