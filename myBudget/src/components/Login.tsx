@@ -10,7 +10,7 @@ export default function Login() {
 
   return (
     <div className="flex justify-center items-center min-h-screen">
-      <div className="card w-96 border-2 border-warning/10 border-dashed bg-warning/5 shadow-xl">
+      <div className="card w-full max-w-sm mx-4 border-2 border-warning/10 border-dashed bg-warning/5 shadow-xl">
         <div className="card-body items-center text-center gap-6">
             
           <div className="flex flex-col">

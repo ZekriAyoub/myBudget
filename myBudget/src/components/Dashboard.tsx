@@ -111,9 +111,9 @@ function Dashboard({ user }: Props) {
         position="top-right"
         reverseOrder={false}
       />
-      <div className="flex justify-center items-center min-h-screen my-5">
-        <div className="w-2/3 flex flex-col gap-4">
-          <div className="flex justify-between rounded-2xl border-2 border-warning/5 border-dashed bg-warning/5 p-5">
+      <div className="flex justify-center items-start min-h-screen my-5 px-4">
+        <div className="w-full md:w-2/3 flex flex-col gap-4">
+          <div className="flex flex-col sm:flex-row justify-between rounded-2xl border-2 border-warning/5 border-dashed bg-warning/5 p-5 gap-4">
             <div className="flex flex-col gap-1">
               <div className="badge badge-soft">
                 <Wallet className="w-4 h-4" size={20} />
@@ -171,7 +171,7 @@ function Dashboard({ user }: Props) {
                   <th>#</th>
                   <th>Description</th>
                   <th>Montant</th>
-                  <th>Date</th>
+                  <th className="hidden sm:table-cell">Date</th>
                   <th>Action</th>
                 </tr>
               </thead>
@@ -190,7 +190,7 @@ function Dashboard({ user }: Props) {
                         `+${transaction.amount}` : `${transaction.amount}`}
                     </div>
                   </td>
-                  <td>{formatDate(transaction.created_at)}</td>
+                  <td className="hidden sm:table-cell">{formatDate(transaction.created_at)}</td>
                   <td>
                     <button className="btn btn-sm btn-error btn-soft" 
                       title="Supprimer"
