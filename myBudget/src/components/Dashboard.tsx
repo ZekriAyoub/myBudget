@@ -182,11 +182,13 @@ function Dashboard({ user }: Props) {
                   key={transaction.id}>
                   <th>{index + 1}</th>
                   <td>{transaction.text}</td>
-                  <td className="font-semibold flex items-center gap-2">
-                    {transaction.amount > 0 ? 
-                    ( <TrendingUp className="text-success w-6 h-6"/> ) : ( <TrendingDown className="text-error w-6 h-6"/> )}
-                    {transaction.amount > 0 ? 
-                    `+${transaction.amount}` : `${transaction.amount}`}
+                  <td className="font-semibold">
+                    <div className="flex items-center gap-2">
+                        {transaction.amount > 0 ? 
+                        ( <TrendingUp className="text-success w-6 h-6"/> ) : ( <TrendingDown className="text-error w-6 h-6"/> )}
+                        {transaction.amount > 0 ? 
+                        `+${transaction.amount}` : `${transaction.amount}`}
+                    </div>
                   </td>
                   <td>{formatDate(transaction.created_at)}</td>
                   <td>

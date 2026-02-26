@@ -24,7 +24,6 @@ export default function Login() {
 
           <div className="divider my-0">Connexion</div>
 
-          {/* Bouton Google */}
           <button
             className="btn btn-warning w-full gap-2"
             onClick={handleGoogleLogin}
