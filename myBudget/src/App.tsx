@@ -35,7 +35,7 @@ function App() {
 
   const deleteTransaction = async (id: string) => {
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('Transaction')
         .delete()
         .eq('id', id)
@@ -56,12 +56,14 @@ function App() {
     }
     setLoading(true)
     try {
-      const res = await supabase
+      const { error } = await supabase
         .from('Transaction')
         .insert({
           text: text,
           amount: amount
         })
+
+        if(error) throw error
       getTransactions()
       const modal = document.getElementById('my_modal_3') as HTMLDialogElement
       modal.close()
