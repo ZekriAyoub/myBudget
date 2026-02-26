@@ -1,227 +1,78 @@
-import { useEffect, useState } from 'react';
-import './App.css'
-import supabase from './api';
-import toast, { Toaster } from 'react-hot-toast';
-import { Activity, ArrowDownCircle, ArrowUpCircle, PlusCircle, Trash, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
+import { useEffect, useState } from "react";
+import type { User } from "@supabase/supabase-js";
+import { Toaster } from "react-hot-toast";
+import supabase from "./supabaseClient";
+import Login from "./components/Login";
+import Dashboard from "./components/Dashboard";
 
-type Transaction = {
-  id: string;
-  text: string;
-  amount: number;
-  created_at: string;
-}
-
-
-function App() {
-
-  const [transactions, setTransactions] = useState<Transaction[]>([])
-  const [text, setText] = useState<string>("")
-  const [amount, setAmount] = useState<number | "">("")
-  const [loading, setLoading] = useState<boolean>(false)
-
-  const getTransactions = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('Transaction')
-        .select('*')
-      if (error) throw error
-
-      setTransactions(data)
-    } catch (error) {
-      toast.error("Erreur de chargement des transactions")
-      console.error(error)
-    }
-  }
-
-  const deleteTransaction = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from('Transaction')
-        .delete()
-        .eq('id', id)
-      if (error) throw error
-
-      toast.success("Transaction supprimée avec succès")
-      getTransactions()
-    } catch (error) {
-      toast.error("Erreur de suppression de la transaction")
-      console.error(error)
-    }
-  }
-
-  const addTransaction = async () => {
-    if (!text || amount === "" || isNaN(Number(amount))) {
-      toast.error("Veuillez remplir tous les champs")
-      return
-    }
-    setLoading(true)
-    try {
-      const { error } = await supabase
-        .from('Transaction')
-        .insert({
-          text: text,
-          amount: amount
-        })
-
-        if(error) throw error
-      getTransactions()
-      const modal = document.getElementById('my_modal_3') as HTMLDialogElement
-      modal.close()
-      toast.success("Transaction ajoutée avec succès")
-      setText("")
-      setAmount("")
-    } catch (error) {
-      toast.error("Erreur d'ajout de la transaction")
-      console.error(error)
-    } finally {
-      setLoading(false)
-    }
-  }
+export default function App() {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getTransactions()
-  }, [])
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+    });
 
-  const amounts = transactions.map(t => Number(t.amount) || 0)
-  const balance = amounts.reduce((acc, item) => acc + item, 0) || 0
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setUser(session?.user ?? null);
+      }
+    );
 
-  const income = amounts.filter(a => a > 0).reduce((acc, item) => acc + item, 0) || 0
-  const expense = amounts.filter(a => a < 0).reduce((acc, item) => acc + item, 0) || 0
-  const ratio = income > 0 ? Math.min((Math.abs(expense) / income) *100, 100) : 0
+    return () => subscription.unsubscribe();
+  }, []);
 
-  const formatDate = (dateString: string) => {
-    const d = new Date(dateString)
-    return d.toLocaleDateString('fr-FR', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-      hour : '2-digit',
-      minute : '2-digit'
-    })
-  }
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+  };
 
+  if (loading) return (
+    <div className="flex justify-center items-center min-h-screen">
+      <span className="loading loading-spinner loading-lg text-warning"></span>
+    </div>
+  );
 
   return (
     <>
-      <Toaster
-        position="top-right"
-        reverseOrder={false}
-      />
-      <div className="flex justify-center items-center min-h-screen my-5">
-        <div className="w-2/3 flex flex-col gap-4">
-          <div className="flex justify-between rounded-2xl border-2 border-warning/5 border-dashed bg-warning/5 p-5">
-            <div className="flex flex-col gap-1">
-              <div className="badge badge-soft">
-                <Wallet className="w-4 h-4" size={20} />
-                Votre solde
-              </div>
-              <div className="stat-value">
-                {balance.toFixed(2)} €
-              </div>
-            </div>
+      <Toaster position="top-right" />
+      {user ? (
+        <div>
+          <div className="flex justify-between items-center px-8 py-4 border-b border-warning/10">
+            <span className="text-sm opacity-60">{user.user_metadata?.full_name || user.email}</span>
+            <button className="btn btn-sm btn-ghost" onClick={handleLogout}>
+              Déconnexion
+            </button>
+            <label className="swap swap-rotate">
+              {/* this hidden checkbox controls the state */}
+              <input type="checkbox" className="theme-controller" value="synthwave" />
 
-            <div className="flex flex-col gap-1">
-              <div className="badge badge-soft badge-success">
-                <ArrowUpCircle className="w-4 h-4" size={20} />
-                Revenus
-              </div>
-              <div className="stat-value">
-                {income.toFixed(2)}€
-              </div>
-            </div>
+              {/* sun icon */}
+              <svg
+                className="swap-off h-10 w-10 fill-current"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24">
+                <path
+                  d="M5.64,17l-.71.71a1,1,0,0,0,0,1.41,1,1,0,0,0,1.41,0l.71-.71A1,1,0,0,0,5.64,17ZM5,12a1,1,0,0,0-1-1H3a1,1,0,0,0,0,2H4A1,1,0,0,0,5,12Zm7-7a1,1,0,0,0,1-1V3a1,1,0,0,0-2,0V4A1,1,0,0,0,12,5ZM5.64,7.05a1,1,0,0,0,.7.29,1,1,0,0,0,.71-.29,1,1,0,0,0,0-1.41l-.71-.71A1,1,0,0,0,4.93,6.34Zm12,.29a1,1,0,0,0,.7-.29l.71-.71a1,1,0,1,0-1.41-1.41L17,5.64a1,1,0,0,0,0,1.41A1,1,0,0,0,17.66,7.34ZM21,11H20a1,1,0,0,0,0,2h1a1,1,0,0,0,0-2Zm-9,8a1,1,0,0,0-1,1v1a1,1,0,0,0,2,0V20A1,1,0,0,0,12,19ZM18.36,17A1,1,0,0,0,17,18.36l.71.71a1,1,0,0,0,1.41,0,1,1,0,0,0,0-1.41ZM12,6.5A5.5,5.5,0,1,0,17.5,12,5.51,5.51,0,0,0,12,6.5Zm0,9A3.5,3.5,0,1,1,15.5,12,3.5,3.5,0,0,1,12,15.5Z" />
+              </svg>
 
-            <div className="flex flex-col gap-1">
-              <div className="badge badge-soft badge-error">
-                <ArrowDownCircle className="w-4 h-4" size={20} />
-                Dépenses
-              </div>
-              <div className="stat-value">
-                 {expense.toFixed(2)} €
-              </div>
-            </div>
-
+              {/* moon icon */}
+              <svg
+                className="swap-on h-10 w-10 fill-current"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24">
+                <path
+                  d="M21.64,13a1,1,0,0,0-1.05-.14,8.05,8.05,0,0,1-3.37.73A8.15,8.15,0,0,1,9.08,5.49a8.59,8.59,0,0,1,.25-2A1,1,0,0,0,8,2.36,10.14,10.14,0,1,0,22,14.05,1,1,0,0,0,21.64,13Zm-9.5,6.69A8.14,8.14,0,0,1,7.08,5.22v.27A10.15,10.15,0,0,0,17.22,15.63a9.79,9.79,0,0,0,2.1-.22A8.11,8.11,0,0,1,12.14,19.73Z" />
+              </svg>
+            </label>
           </div>
-
-          <div className="rounded-2xl border-2 border-warning/5 border-dashed bg-warning/5 p-5">
-            <div className="flex justify-between items-center mb-1">
-              <div className="badge badge-soft badge-warning gap-1">
-                <Activity className="w-4 h-4" />
-                Dépenses VS Revenus
-              </div>
-              <div> 
-                {ratio.toFixed(0)} %
-              </div>
-            </div>
-            <progress className="progress progress-warning w-full" value={ratio} max={100}></progress>
-          </div>
- 
-          <button className="btn btn-warning" onClick={()=>(document.getElementById('my_modal_3') as HTMLDialogElement ).showModal()}>
-            <PlusCircle className="w-4 h-4" size={20} />
-            Ajouter une transaction
-          </button>
-         
-          <div className="rounded-2xl border-2 border-warning/5 border-dashed bg-warning/5">
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Description</th>
-                  <th>Montant</th>
-                  <th>Date</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-
-                {transactions.map((transaction, index) => (
-                <tr
-                  key={transaction.id}>
-                  <th>{index + 1}</th>
-                  <td>{transaction.text}</td>
-                  <td className="font-semibold flex items-center gap-2">
-                    {transaction.amount > 0 ? 
-                    ( <TrendingUp className="text-success w-6 h-6"/> ) : ( <TrendingDown className="text-error w-6 h-6"/> )}
-                    {transaction.amount > 0 ? 
-                    `+${transaction.amount}` : `${transaction.amount}`}
-                  </td>
-                  <td>{formatDate(transaction.created_at)}</td>
-                  <td>
-                    <button className="btn btn-sm btn-error btn-soft" 
-                      title="Supprimer"
-                      onClick={() => deleteTransaction(transaction.id)}>
-                      <Trash className="w-4 h-4"/>
-                    </button>
-                  </td>
-                </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <dialog id="my_modal_3" className="modal backdrop-blur">
-            <div className="modal-box border-2 border-warning/10 border-dashed">
-              <form method="dialog">
-                <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
-              </form>
-              <h3 className="font-bold text-lg">Ajouter une transaction</h3>
-              <div className="flex flex-col gap-4 mt-4">
-                <div className="flex flex-col gap-2">
-                  <label className="label">Texte</label>
-                  <input type="text" name="text" value={text} onChange={(e) => setText(e.target.value)} placeholder="Entrez le texte de la transaction" className="input input-bordered w-full" />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <label className="label">Montant (négatif - dépense , positif - revenu)</label>
-                  <input type="number" name="amount" value={amount} onChange={(e) => setAmount(e.target.value === "" ? "" : Number(e.target.value))} placeholder="Entrez le montant" className="input input-bordered w-full" />
-                </div>
-                <button className="w-full btn btn-warning" onClick={addTransaction} disabled={loading}><PlusCircle className="w-4 h-4 mr-2"/>Ajouter</button>
-              </div>
-            </div>
-          </dialog>
-
+          <Dashboard user={user}/>
         </div>
-      </div>
+      ) : (
+        <Login />
+      )}
     </>
-
-  )
+  );
 }
-
-export default App
