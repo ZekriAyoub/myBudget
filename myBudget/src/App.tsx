@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import './App.css'
 import supabase from './api';
 import toast, { Toaster } from 'react-hot-toast';
-import { Activity, ArrowDownCircle, ArrowUpCircle, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
+import { Activity, ArrowDownCircle, ArrowUpCircle, Trash, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
 
 type Transaction = {
   id: string;
@@ -25,9 +25,25 @@ function App() {
       if (error) throw error
 
       setTransactions(data)
-      toast.success("Transactions chargées avec succès")
     } catch (error) {
       toast.error("Erreur de chargement des transactions")
+      console.error(error)
+    }
+  }
+
+  const deleteTransaction = async (id: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('Transaction')
+        .delete()
+        .eq('id', id)
+      console.log(data)
+      if (error) throw error
+
+      toast.success("Transaction supprimée avec succès")
+      getTransactions()
+    } catch (error) {
+      toast.error("Erreur de suppression de la transaction")
       console.error(error)
     }
   }
@@ -130,13 +146,22 @@ function App() {
                   <td>{transaction.text}</td>
                   <td className="font-semibold flex items-center gap-2">
                     {transaction.amount > 0 ? 
-                    ( <TrendingUp className="test-sucess w-6 h-6"/> ) : ( <TrendingDown className="test-error w-6 h-6"/> )}
+                    ( <TrendingUp className="text-success w-6 h-6"/> ) : ( <TrendingDown className="text-error w-6 h-6"/> )}
                     {transaction.amount > 0 ? 
                     `+${transaction.amount}` : `-${transaction.amount}`}
                   </td>
                   <td>{formatDate(transaction.created_at)}</td>
+                  <td>
+                    <button className="btn btn-sm btn-error btn-soft" 
+                      title="Supprimer"
+                      onClick={() => deleteTransaction(transaction.id)}>
+                      <Trash className="w-4 h-4"/>
+                    </button>
+                  </td>
                 </tr>
                 ))}
+                
+
 
               </tbody>
             </table>
