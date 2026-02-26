@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import './App.css'
 import supabase from './api';
 import toast, { Toaster } from 'react-hot-toast';
-import { Activity, ArrowDownCircle, ArrowUpCircle, Trash, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
+import { Activity, ArrowDownCircle, ArrowUpCircle, PlusCircle, Trash, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
 
 type Transaction = {
   id: string;
@@ -15,6 +15,9 @@ type Transaction = {
 function App() {
 
   const [transactions, setTransactions] = useState<Transaction[]>([])
+  const [text, setText] = useState<string>("")
+  const [amount, setAmount] = useState<number | "">("")
+  const [loading, setLoading] = useState<boolean>(false)
 
   const getTransactions = async () => {
     try {
@@ -45,6 +48,34 @@ function App() {
     } catch (error) {
       toast.error("Erreur de suppression de la transaction")
       console.error(error)
+    }
+  }
+
+  const addTransaction = async () => {
+    if (!text || amount === "" || isNaN(Number(amount))) {
+      toast.error("Veuillez remplir tous les champs")
+      return
+    }
+    setLoading(true)
+    try {
+      const res = await supabase
+        .from('Transaction')
+        .insert({
+          text: text,
+          amount: amount
+        })
+      console.log(res)
+      getTransactions()
+      const modal = document.getElementById('my_modal_3') as HTMLDialogElement
+      modal.close()
+      toast.success("Transaction ajoutée avec succès")
+      setText("")
+      setAmount("")
+    } catch (error) {
+      toast.error("Erreur d'ajout de la transaction")
+      console.error(error)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -125,7 +156,11 @@ function App() {
             <progress className="progress progress-warning w-full" value={ratio} max={100}></progress>
           </div>
  
-          <button ></button>
+          <button className="btn btn-warning" onClick={()=>(document.getElementById('my_modal_3') as HTMLDialogElement ).showModal()}>
+            <PlusCircle className="w-4 h-4" size={20} />
+            Ajouter une transaction
+          </button>
+         
           <div className="rounded-2xl border-2 border-warning/5 border-dashed bg-warning/5">
             <table className="table">
               <thead>
@@ -148,7 +183,7 @@ function App() {
                     {transaction.amount > 0 ? 
                     ( <TrendingUp className="text-success w-6 h-6"/> ) : ( <TrendingDown className="text-error w-6 h-6"/> )}
                     {transaction.amount > 0 ? 
-                    `+${transaction.amount}` : `-${transaction.amount}`}
+                    `+${transaction.amount}` : `${transaction.amount}`}
                   </td>
                   <td>{formatDate(transaction.created_at)}</td>
                   <td>
@@ -160,12 +195,29 @@ function App() {
                   </td>
                 </tr>
                 ))}
-                
-
-
               </tbody>
             </table>
           </div>
+          <dialog id="my_modal_3" className="modal backdrop-blur">
+            <div className="modal-box border-2 border-warning/10 border-dashed">
+              <form method="dialog">
+                <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+              </form>
+              <h3 className="font-bold text-lg">Ajouter une transaction</h3>
+              <div className="flex flex-col gap-4 mt-4">
+                <div className="flex flex-col gap-2">
+                  <label className="label">Texte</label>
+                  <input type="text" name="text" value={text} onChange={(e) => setText(e.target.value)} placeholder="Entrez le texte de la transaction" className="input input-bordered w-full" />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label className="label">Montant (négatif - dépense , positif - revenu)</label>
+                  <input type="number" name="amount" value={amount} onChange={(e) => setAmount(e.target.value === "" ? "" : Number(e.target.value))} placeholder="Entrez le montant" className="input input-bordered w-full" />
+                </div>
+                <button className="w-full btn btn-warning" onClick={addTransaction} disabled={loading}><PlusCircle className="w-4 h-4 mr-2"/>Ajouter</button>
+              </div>
+            </div>
+          </dialog>
+
         </div>
       </div>
     </>
