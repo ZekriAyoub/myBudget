@@ -24,7 +24,6 @@ function App() {
       const { data, error } = await supabase
         .from('Transaction')
         .select('*')
-      console.log(data)
       if (error) throw error
 
       setTransactions(data)
@@ -40,7 +39,6 @@ function App() {
         .from('Transaction')
         .delete()
         .eq('id', id)
-      console.log(data)
       if (error) throw error
 
       toast.success("Transaction supprimée avec succès")
@@ -64,7 +62,6 @@ function App() {
           text: text,
           amount: amount
         })
-      console.log(res)
       getTransactions()
       const modal = document.getElementById('my_modal_3') as HTMLDialogElement
       modal.close()
